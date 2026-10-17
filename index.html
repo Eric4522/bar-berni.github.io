@@ -1,395 +1,941 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bar Berni | Casas Altas</title>
-    <style>
-        :root {
-            --bg-color: #f3efe6;
-            --card-bg: #faf7f2;
-            --primary-dark: #3b3028;
-            --text-main: #4a3f35;
-            --text-muted: #7a6a5b;
-            --border-color: #d4c5b9;
-            --accent-border: #b5a494;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tesla Roadster SpaceX Flight & Driving Simulator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body { overflow: hidden; background: #05070a; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: #fff; }
+    canvas { display: block; }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    /* HUD estilo telemetría SpaceX / Tesla */
+    #hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 20px 28px;
+      background: radial-gradient(circle at center, transparent 65%, rgba(0,0,0,0.55) 100%);
+    }
 
-        body {
-            font-family: 'Georgia', serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            line-height: 1.6;
-        }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+    }
 
-        header {
-            text-align: center;
-            padding: 3rem 1rem 2rem 1rem;
-            background-color: #eae3d5;
-            border-bottom: 2px solid var(--border-color);
-        }
+    .panel {
+      background: rgba(10, 14, 22, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 14px 18px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+    }
 
-        header h1 {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 2.5rem;
-            letter-spacing: 3px;
-            color: var(--primary-dark);
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-        }
+    .brand-title {
+      font-size: 13px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #e82127;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
 
-        header p {
-            font-size: 0.95rem;
-            color: var(--text-muted);
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
+    .sub-stat {
+      font-size: 12px;
+      color: #9aa4b2;
+      margin-top: 3px;
+    }
 
-        .menu-nav {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin: 2rem auto;
-            flex-wrap: wrap;
-            max-width: 800px;
-            padding: 0 1rem;
-        }
+    .controls-list {
+      font-size: 12px;
+      line-height: 1.65;
+      color: #d0d7de;
+    }
+    .key {
+      display: inline-block;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 4px;
+      padding: 0 6px;
+      font-family: monospace;
+      font-weight: 700;
+      color: #fff;
+    }
 
-        .menu-nav a {
-            border: 1px solid var(--accent-border);
-            padding: 8px 16px;
-            border-radius: 20px;
-            text-decoration: none;
-            color: var(--text-main);
-            font-size: 0.85rem;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            background-color: var(--card-bg);
-            transition: all 0.3s;
-        }
+    .bottom-bar {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: end;
+      gap: 20px;
+    }
 
-        .menu-nav a:hover {
-            background-color: var(--primary-dark);
-            color: white;
-            border-color: var(--primary-dark);
-        }
+    /* Velocímetro central */
+    .center-cluster {
+      text-align: center;
+      min-width: 320px;
+      padding: 18px 28px;
+    }
+    .speed-val {
+      font-size: 64px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -2px;
+      font-variant-numeric: tabular-nums;
+    }
+    .speed-unit {
+      font-size: 13px;
+      letter-spacing: 2px;
+      color: #8b949e;
+      margin-top: 4px;
+    }
+    .telemetry-row {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      font-size: 13px;
+    }
+    .telemetry-item span {
+      display: block;
+      font-size: 10px;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .telemetry-item strong {
+      font-size: 16px;
+      font-variant-numeric: tabular-nums;
+      color: #58a6ff;
+    }
 
-        .container {
-            max-width: 700px;
-            margin: 0 auto;
-            padding: 0 1.5rem 4rem 1.5rem;
-        }
+    /* Barra de aire comprimido COPV */
+    .copv-container {
+      margin-top: 12px;
+    }
+    .copv-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+      color: #c9d1d9;
+    }
+    .copv-bar-bg {
+      width: 100%;
+      height: 10px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    #copv-fill {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #00d2ff, #3a7bd5);
+      transition: width 0.06s linear;
+    }
 
-        .notice {
-            text-align: center;
-            font-size: 0.9rem;
-            font-style: italic;
-            color: var(--text-muted);
-            margin-bottom: 3rem;
-            letter-spacing: 0.5px;
-        }
+    /* Diagrama de los 4 propulsores en las esquinas */
+    .thruster-diagram {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      justify-self: end;
+    }
+    .car-outline {
+      position: relative;
+      width: 64px;
+      height: 110px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-radius: 18px 18px 10px 10px;
+      background: rgba(255,255,255,0.04);
+    }
+    .nozzle {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.4);
+      transition: all 0.08s ease;
+    }
+    .nozzle.active {
+      background: #00e5ff;
+      box-shadow: 0 0 14px #00e5ff, 0 0 24px #ffffff;
+      transform: scale(1.25);
+    }
+    .nozzle.rear-main {
+      width: 22px;
+      height: 10px;
+      border-radius: 4px;
+      bottom: -7px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .nozzle.rear-main.active {
+      background: #ff3b30;
+      box-shadow: 0 0 16px #ff3b30, 0 0 28px #ff9500;
+      transform: translateX(-50%) scale(1.3);
+    }
+    .n-fl { top: 8px; left: -7px; }
+    .n-fr { top: 8px; right: -7px; }
+    .n-rl { bottom: 12px; left: -7px; }
+    .n-rr { bottom: 12px; right: -7px; }
 
-        .category-section {
-            margin-bottom: 3.5rem;
-        }
-
-        .category-title {
-            text-align: center;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 1.4rem;
-            letter-spacing: 2px;
-            color: var(--primary-dark);
-            margin-bottom: 2rem;
-            text-transform: uppercase;
-            border-bottom: 1px dashed var(--accent-border);
-            padding-bottom: 8px;
-        }
-
-        .item-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            margin-bottom: 1.5rem;
-        }
-
-        .item-name-desc {
-            flex-grow: 1;
-            padding-right: 1.5rem;
-        }
-
-        .item-name {
-            font-size: 1.05rem;
-            font-weight: bold;
-            color: var(--primary-dark);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .item-desc {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            font-style: italic;
-            margin-top: 3px;
-        }
-
-        .item-prices {
-            white-space: nowrap;
-            font-size: 1rem;
-            font-weight: bold;
-            color: #5c4a3d;
-        }
-
-        .info-section {
-            background-color: #eae3d5;
-            border-top: 2px solid var(--border-color);
-            padding: 3rem 1.5rem;
-            margin-top: 4rem;
-            text-align: center;
-        }
-
-        .info-section h3 {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 1.3rem;
-            color: var(--primary-dark);
-            margin-bottom: 1rem;
-            text-transform: uppercase;
-        }
-
-        .info-section p {
-            font-size: 0.95rem;
-            color: var(--text-main);
-            margin-bottom: 0.5rem;
-        }
-
-        .btn-map {
-            display: inline-block;
-            margin-top: 1.5rem;
-            border: 1px solid var(--primary-dark);
-            padding: 10px 20px;
-            border-radius: 4px;
-            text-decoration: none;
-            color: var(--primary-dark);
-            font-size: 0.85rem;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            background-color: var(--card-bg);
-            font-weight: bold;
-            transition: all 0.3s;
-        }
-
-        .btn-map:hover {
-            background-color: var(--primary-dark);
-            color: white;
-        }
-
-        footer {
-            text-align: center;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            padding: 2rem;
-            background-color: #3b3028;
-            color: #f3efe6;
-        }
-    </style>
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-top: 6px;
+    }
+    .badge-suction { background: rgba(232, 33, 39, 0.25); color: #ff6b6b; border: 1px solid #e82127; }
+    .badge-lowdrag { background: rgba(0, 210, 255, 0.2); color: #58a6ff; border: 1px solid #58a6ff; }
+  </style>
 </head>
 <body>
 
-    <header>
-        <h1>Bar Berni</h1>
-        <p>Casas Altas • Tradición y Sabor</p>
-    </header>
+  <div id="hud">
+    <div class="top-bar">
+      <div class="panel">
+        <div class="brand-title">TESLA ROADSTER // SPACEX PACKAGE</div>
+        <div style="font-size: 15px; font-weight: 700;">Simulador de Mundo Abierto (Especificación Real 80 kN)</div>
+        <div class="sub-stat" id="zero-to-sixty">Crono 0-100 km/h: <strong>Listo (Frena a 0 y pulsa W + SHIFT)</strong></div>
+        <div id="aero-badge" class="badge badge-suction">TURBINA INFERIOR: MODO SUCCIÓN (2.2G AGARRE)</div>
+      </div>
 
-    <div class="menu-nav">
-        <a href="#tostadas">Tostadas y Almuerzos</a>
-        <a href="#tapas">Tapas</a>
-        <a href="#bocadillos">Bocadillos</a>
-        <a href="#bebidas">Bebidas</a>
-        <a href="#postres">Postres y Helados</a>
-        <a href="#contacto">Contacto</a>
+      <div class="panel controls-list">
+        <div><span class="key">W</span> <span class="key">S</span> Acelerar / Frenar (Inclinación Pitch en vuelo)</div>
+        <div><span class="key">A</span> <span class="key">D</span> Dirección Steer-by-Wire (Guiñada en vuelo)</div>
+        <div><span class="key">SHIFT</span> Cohete Trasero Cold-Gas (0-100 en 0,81s)</div>
+        <div><span class="key">ESPACIO</span> Propulsores Verticales VTOL (Volar)</div>
+        <div><span class="key">Q</span> <span class="key">E</span> Alabeo / <strong>Barrel Roll</strong> en el aire</div>
+        <div><span class="key">F</span> Alternar Turbina (Succión vs. Alta Velocidad)</div>
+        <div><span class="key">C</span> Cambiar Cámara (Persecución / Cabina Yoke) &nbsp; <span class="key">R</span> Reaparecer</div>
+      </div>
     </div>
 
-    <div class="container">
-        <div class="notice">
-            * Pregúntanos por las opciones adaptadas y sugerencias del día
+    <div class="bottom-bar">
+      <div class="panel" style="justify-self: start; min-width: 240px;">
+        <div style="font-size: 11px; color:#8b949e; text-transform: uppercase; letter-spacing: 1px;">Estado de Vuelo & Compresor</div>
+        <div id="flight-status" style="font-size: 16px; font-weight: 700; margin-top: 4px; color: #3fb950;">EN TIERRA - CARGANDO AIRE</div>
+        <div class="copv-container">
+          <div class="copv-label">
+            <span>Tanque Aire COPV (250 kg)</span>
+            <span id="copv-pct">100% (10.000 PSI)</span>
+          </div>
+          <div class="copv-bar-bg">
+            <div id="copv-fill"></div>
+          </div>
         </div>
+      </div>
 
-        <!-- TOSTADAS Y ALMUERZOS -->
-        <div id="tostadas" class="category-section">
-            <div class="category-title">Tostadas y Almuerzos</div>
-            <div class="item-row">
-                <div class="item-name-desc">
-                    <div class="item-name">Tostada Tradicional</div>
-                    <div class="item-desc">Con tomate natural rallado y aceite de oliva virgen extra</div>
-                </div>
-                <div class="item-prices">3,00 €</div>
-            </div>
-            <div class="item-row">
-                <div class="item-name-desc">
-                    <div class="item-name">Tostada de Jamón Serrano</div>
-                    <div class="item-desc">Jamón curado seleccionado con tomate</div>
-                </div>
-                <div class="item-prices">4,50 €</div>
-            </div>
-            <div class="item-row">
-                <div class="item-name-desc">
-                    <div class="item-name">Tostada con Queso Fresco o Embutido Local</div>
-                    <div class="item-desc">Sabor artesano de la comarca</div>
-                </div>
-                <div class="item-prices">4,00 €</div>
-            </div>
-            <div class="item-row">
-                <div class="item-name-desc">
-                    <div class="item-name">Almuerzo Popular del Berni</div>
-                    <div class="item-desc">Bocadillo especial, olivas, café y bebida</div>
-                </div>
-                <div class="item-prices">7,50 €</div>
-            </div>
+      <div class="panel center-cluster">
+        <div class="speed-val" id="speed-kmh">0</div>
+        <div class="speed-unit">KM/H &nbsp;|&nbsp; <span id="mach-val">MACH 0.00</span></div>
+        <div class="telemetry-row">
+          <div class="telemetry-item">
+            <span>Altitud</span>
+            <strong id="alt-val">0.0 m</strong>
+          </div>
+          <div class="telemetry-item">
+            <span>Fuerza G</span>
+            <strong id="g-val">1.0 G</strong>
+          </div>
+          <div class="telemetry-item">
+            <span>Empuje Activo</span>
+            <strong id="thrust-val">0 kN</strong>
+          </div>
         </div>
+      </div>
 
-        <!-- TAPAS -->
-        <div id="tapas" class="category-section">
-            <div class="category-title">Tapas</div>
-            <div class="item-row">
-                <div class="item-name-desc">
-                    <div class="item-name">Patatas Bravas</div>
-                    <div class="item-desc">Con nuestra salsa brava casera y alioli</div>
-                </div>
-                <div class="item-prices">3,50 € / 6,00 €</div>
-            </div>
-            <div class="item-row">
-                <div class="item-name-desc">
-                    <div class="item-name">Croquetas Caseras</div>
-                    <div class="item-desc">De jamón o pollo de corral (unidad / ración)</div>
-                </div>
-                <div class="item-prices">1,50 € / 7,00 €</div>
-            </div>
-            <div class="item-row">
-                <div class="item-name-desc">
-                    <div class="item-name">Oreja a la Plancha</div>
-                    <div class="item-desc">Con ajito, perejil y un toque de limón</div>
-                </div>
-                <div class="item-prices">4,50 € / 8,00 €</div>
-            </div>
-            <div class="item-row">
-                <div class="item-name-desc">
-                    <div class="item-name">Ensaladilla Rusa</div>
-                    <div class="item-desc">Receta tradicional de la casa</div>
-                </div>
-                <div class="item-prices">4,00 € / 7,50 €</div>
-            </div>
+      <div class="panel thruster-diagram">
+        <div>
+          <div style="font-size: 11px; color:#8b949e; text-transform: uppercase; letter-spacing: 1px;">Telemetría 4 Esquinas</div>
+          <div style="font-size: 12px; color:#c9d1d9; margin-top: 4px;">Toberas Cold-Gas<br>Estabilización Activa</div>
+          <div style="font-size: 11px; color:#58a6ff; margin-top: 6px;" id="retro-indicator">Retro-Frenado: Standby</div>
         </div>
-
-        <!-- BOCADILLOS -->
-        <div id="bocadillos" class="category-section">
-            <div class="category-title">Bocadillos</div>
-            <div class="item-row">
-                <div class="item-name-desc">
-                    <div class="item-name">Lomo con Queso</div>
-                    <div class="item-desc">Lomo tierno a la plancha con queso fundido</div>
-                </div>
-                <div class="item-prices">5,50 €</div>
-            </div>
-            <div class="item-row">
-                <div class="item-name-desc">
-                    <div class="item-name">Panceta con Pimientos</div>
-                    <div class="item-desc">Panceta crujiente con pimientos verdes fritos</div>
-                </div>
-                <div class="item-prices">5,50 €</div>
-            </div>
-            <div class="item-row">
-                <div class="item-name-desc">
-                    <div class="item-name">Tortilla de Patata</div>
-                    <div class="item-desc">Tortilla casera recién hecha</div>
-                </div>
-                <div class="item-prices">5,00 €</div>
-            </div>
-            <div class="item-row">
-                <div class="item-name-desc">
-                    <div class="item-name">Chivito del Berni</div>
-                    <div class="item-desc">Lomo, bacon, queso, lechuga, tomate y mayonesa</div>
-                </div>
-                <div class="item-prices">7,00 €</div>
-            </div>
+        <div class="car-outline">
+          <div class="nozzle n-fl" id="noz-fl"></div>
+          <div class="nozzle n-fr" id="noz-fr"></div>
+          <div class="nozzle n-rl" id="noz-rl"></div>
+          <div class="nozzle n-rr" id="noz-rr"></div>
+          <div class="nozzle rear-main" id="noz-rear"></div>
         </div>
-
-        <!-- BEBIDAS -->
-        <div id="bebidas" class="category-section">
-            <div class="category-title">Bebidas</div>
-            <div class="item-row">
-                <div class="item-name-desc">
-                    <div class="item-name">Caña / Doble de Cerveza</div>
-                </div>
-                <div class="item-prices">2,00 € / 3,00 €</div>
-            </div>
-            <div class="item-row">
-                <div class="item-name-desc">
-                    <div class="item-name">Vino de la Casa (Copa)</div>
-                </div>
-                <div class="item-prices">2,20 €</div>
-            </div>
-            <div class="item-row">
-                <div class="item-name-desc">
-                    <div class="item-name">Refrescos (Cola, Naranja, Limón)</div>
-                </div>
-                <div class="item-prices">2,50 €</div>
-            </div>
-            <div class="item-row">
-                <div class="item-name-desc">
-                    <div class="item-name">Agua Mineral 50cl</div>
-                </div>
-                <div class="item-prices">1,50 €</div>
-            </div>
-            <div class="item-row">
-                <div class="item-name-desc">
-                    <div class="item-name">Café o Infusión</div>
-                </div>
-                <div class="item-prices">1,50 €</div>
-            </div>
-        </div>
-
-        <!-- POSTRES Y HELADOS -->
-        <div id="postres" class="category-section">
-            <div class="category-title">Postres y Helados</div>
-            <div class="item-row">
-                <div class="item-name-desc">
-                    <div class="item-name">Tarta de Queso Casera</div>
-                    <div class="item-desc">Elaboración propia con toque cremoso</div>
-                </div>
-                <div class="item-prices">5,00 €</div>
-            </div>
-            <div class="item-row">
-                <div class="item-name-desc">
-                    <div class="item-name">Flan de Huevo Tradicional</div>
-                </div>
-                <div class="item-prices">4,00 €</div>
-            </div>
-            <div class="item-row">
-                <div class="item-name-desc">
-                    <div class="item-name">Helados Variados Artesanos</div>
-                    <div class="item-desc">Pregunta por los sabores disponibles</div>
-                </div>
-                <div class="item-prices">3,50 €</div>
-            </div>
-        </div>
+      </div>
     </div>
+  </div>
 
-    <div id="contacto" class="info-section">
-        <h3>Información y Ubicación</h3>
-        <p>📍 <strong>Dirección:</strong> Av. Diputación, 32, 46147 Casas Altas (Valencia)</p>
-        <p>🕒 <strong>Horario:</strong> Abierto todos los días de 08:00 a 24:00 (Cerrado por descanso los jueves)</p>
-        <p>⭐ Trabajamos por orden de llegada (No se hacen reservas)</p>
-        <a href="https://maps.google.com/?q=Av.+Diputacion,+32,+46147+Casas+Altas,+Valencia" target="_blank" class="btn-map">Abrir en Google Maps</a>
-    </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // =========================================================================
+    // 1. CONFIGURACIÓN ESCENA THREE.JS Y MUNDO ABIERTO (TEXAS TEST FACILITY)
+    // =========================================================================
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b101b);
+    scene.fog = new THREE.FogExp2(0x0b101b, 0.00045);
 
-    <footer>
-        <p>&copy; 2026 Bar Berni - Casas Altas. Todos los derechos reservados.</p>
-    </footer>
+    const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 4000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.body.appendChild(renderer.domElement);
 
+    // Luces
+    const hemiLight = new THREE.HemisphereLight(0x9ec5ff, 0x1f242d, 0.7);
+    scene.add(hemiLight);
+
+    const sunLight = new THREE.DirectionalLight(0xfff1e0, 1.35);
+    sunLight.position.set(300, 500, 250);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 10;
+    sunLight.shadow.camera.far = 1500;
+    const d = 400;
+    sunLight.shadow.camera.left = -d;
+    sunLight.shadow.camera.right = d;
+    sunLight.shadow.camera.top = d;
+    sunLight.shadow.camera.bottom = -d;
+    scene.add(sunLight);
+
+    // Suelo de Mundo Abierto con cuadrícula de telemetría
+    const groundGeo = new THREE.PlaneGeometry(8000, 8000);
+    const groundMat = new THREE.MeshStandardMaterial({
+      color: 0x141923,
+      roughness: 0.85,
+      metalness: 0.15
+    });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    const gridHelper = new THREE.GridHelper(8000, 400, 0x2ea043, 0x212836);
+    gridHelper.position.y = 0.02;
+    scene.add(gridHelper);
+
+    // Pista de pruebas infinita (Asfalto)
+    const runwayGeo = new THREE.PlaneGeometry(36, 6000);
+    const runwayMat = new THREE.MeshStandardMaterial({ color: 0x1f242c, roughness: 0.6 });
+    const runway = new THREE.Mesh(runwayGeo, runwayMat);
+    runway.rotation.x = -Math.PI / 2;
+    runway.position.y = 0.04;
+    runway.receiveShadow = true;
+    scene.add(runway);
+
+    // Líneas de pista
+    for (let z = -2800; z < 2800; z += 40) {
+      const stripe = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.6, 18),
+        new THREE.MeshBasicMaterial({ color: 0xf0f6fc })
+      );
+      stripe.rotation.x = -Math.PI / 2;
+      stripe.position.set(0, 0.06, z);
+      scene.add(stripe);
+    }
+
+    // =========================================================================
+    // 2. RAMPAS DE SALTO (DEMO DE BARREL ROLL) Y OBSTÁCULOS DE MUNDO ABIERTO
+    // =========================================================================
+    const ramps = [];
+    function createRamp(x, z, width, length, height, color = 0x2c3440) {
+      // Creamos una cuña usando geometría personalizada o caja inclinada
+      const angle = Math.atan2(height, length);
+      const hyp = Math.sqrt(length * length + height * height);
+      const geo = new THREE.BoxGeometry(width, 2, hyp);
+      const mat = new THREE.MeshStandardMaterial({ color, metalness: 0.4, roughness: 0.5 });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(x, height / 2 - 0.5, z);
+      mesh.rotation.x = angle;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+
+      // Bordes luminosos de la rampa
+      const edgeMat = new THREE.MeshBasicMaterial({ color: 0xe82127 });
+      const leftEdge = new THREE.Mesh(new THREE.BoxGeometry(0.35, 2.1, hyp), edgeMat);
+      leftEdge.position.x = -width / 2;
+      mesh.add(leftEdge);
+      const rightEdge = new THREE.Mesh(new THREE.BoxGeometry(0.35, 2.1, hyp), edgeMat);
+      rightEdge.position.x = width / 2;
+      mesh.add(rightEdge);
+
+      ramps.push({ x, z, width, length, height });
+    }
+
+    // Rampa principal de la presentación SpaceX (justo delante del inicio)
+    createRamp(0, -180, 18, 55, 14, 0x30363d);
+    // Mega-rampa estilo "Snake River Canyon" más adelante
+    createRamp(0, -650, 24, 90, 28, 0x3b2329);
+    // Rampas laterales para acrobacias
+    createRamp(80, -300, 16, 45, 12, 0x243b4a);
+    createRamp(-80, -300, 16, 45, 12, 0x243b4a);
+
+    // Torres de lanzamiento estilo Starbase y edificios para referencia de velocidad y vuelo
+    const towerMat = new THREE.MeshStandardMaterial({ color: 0x303846, metalness: 0.6, roughness: 0.4 });
+    const neonMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+    for (let i = 0; i < 90; i++) {
+      const side = (i % 2 === 0 ? 1 : -1);
+      const x = side * (45 + Math.random() * 550);
+      const z = -2500 + Math.random() * 5000;
+      const h = 15 + Math.random() * 110;
+      const w = 12 + Math.random() * 22;
+
+      const bldg = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), towerMat);
+      bldg.position.set(x, h / 2, z);
+      bldg.castShadow = true;
+      bldg.receiveShadow = true;
+      scene.add(bldg);
+
+      // Anillo luminoso superior para referencia visual en vuelo nocturno
+      const beacon = new THREE.Mesh(new THREE.BoxGeometry(w + 0.5, 1.2, w + 0.5), neonMat);
+      beacon.position.set(x, h - 2, z);
+      scene.add(beacon);
+    }
+
+    // Arcos aéreos para atravesar volando
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0xff3b30, wireframe: false });
+    for (let z = -300; z >= -1800; z -= 300) {
+      const torus = new THREE.Mesh(new THREE.TorusGeometry(18, 0.7, 12, 48), ringMat);
+      torus.position.set(0, 32 + (Math.abs(z) % 20), z);
+      scene.add(torus);
+    }
+
+    // =========================================================================
+    // 3. MODELO 3D DEL NUEVO TESLA ROADSTER (CON ALERÓN ACTIVO Y VOLANTE YOKE)
+    // =========================================================================
+    const carGroup = new THREE.Group();
+    scene.add(carGroup);
+
+    // Pintura Roja Metálica Multicapa de Tesla
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: 0xd91420,
+      metalness: 0.75,
+      roughness: 0.18
+    });
+    const carbonMat = new THREE.MeshStandardMaterial({
+      color: 0x16181d,
+      metalness: 0.5,
+      roughness: 0.4
+    });
+    const glassMat = new THREE.MeshStandardMaterial({
+      color: 0x090d16,
+      metalness: 0.9,
+      roughness: 0.1,
+      transparent: true,
+      opacity: 0.82
+    });
+
+    // Chasis principal aerodinámico
+    const mainChassis = new THREE.Mesh(new THREE.BoxGeometry(2.05, 0.52, 4.6), bodyMat);
+    mainChassis.position.y = 0.52;
+    mainChassis.castShadow = true;
+    carGroup.add(mainChassis);
+
+    // Morro afilado delantero
+    const nose = new THREE.Mesh(new THREE.BoxGeometry(1.95, 0.36, 1.1), bodyMat);
+    nose.position.set(0, 0.42, -2.4);
+    nose.rotation.x = 0.14;
+    carGroup.add(nose);
+
+    // Difusor trasero + Tobera central SpaceX (oculta tras la matrícula)
+    const diffuser = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.38, 0.6), carbonMat);
+    diffuser.position.set(0, 0.4, 2.15);
+    carGroup.add(diffuser);
+
+    const mainThrusterMesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.22, 0.3, 0.35, 20),
+      new THREE.MeshStandardMaterial({ color: 0x555d68, metalness: 0.9, roughness: 0.2 })
+    );
+    mainThrusterMesh.rotation.x = Math.PI / 2;
+    mainThrusterMesh.position.set(0, 0.52, 2.35);
+    carGroup.add(mainThrusterMesh);
+
+    // Cúpula de cristal (Canopy)
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.48, 2.1), glassMat);
+    cabin.position.set(0, 0.92, -0.1);
+    carGroup.add(cabin);
+
+    // Interior con volante Yoke Steer-by-Wire (visible en cámara de cabina)
+    const yokeGroup = new THREE.Group();
+    yokeGroup.position.set(-0.38, 0.78, -0.68);
+    const yokeBar = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.04, 0.04), carbonMat);
+    const yokeLeft = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.16, 0.04), carbonMat);
+    yokeLeft.position.set(-0.16, 0.05, 0);
+    const yokeRight = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.16, 0.04), carbonMat);
+    yokeRight.position.set(0.16, 0.05, 0);
+    yokeGroup.add(yokeBar, yokeLeft, yokeRight);
+    carGroup.add(yokeGroup);
+
+    // Alerón trasero activo (sube en modo Succión / Frenado, baja en modo Low Drag)
+    const activeWing = new THREE.Mesh(new THREE.BoxGeometry(1.92, 0.06, 0.38), carbonMat);
+    activeWing.position.set(0, 0.85, 2.08);
+    carGroup.add(activeWing);
+
+    // Tira LED trasera continua y faros delanteros
+    const tailLight = new THREE.Mesh(
+      new THREE.BoxGeometry(1.9, 0.06, 0.05),
+      new THREE.MeshBasicMaterial({ color: 0xff1e1e })
+    );
+    tailLight.position.set(0, 0.68, 2.31);
+    carGroup.add(tailLight);
+
+    const headLightL = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.05, 0.1), new THREE.MeshBasicMaterial({ color: 0xdff6ff }));
+    headLightL.position.set(-0.68, 0.56, -2.85);
+    const headLightR = headLightL.clone();
+    headLightR.position.x = 0.68;
+    carGroup.add(headLightL, headLightR);
+
+    // Ruedas Pirelli P Zero Trofeo RS Elect
+    const wheels = [];
+    const wheelGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.32, 24);
+    wheelGeo.rotateZ(Math.PI / 2);
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111317, roughness: 0.7 });
+    const wheelPositions = [
+      [-1.02, 0.38, -1.55],
+      [ 1.02, 0.38, -1.55],
+      [-1.02, 0.38,  1.45],
+      [ 1.02, 0.38,  1.45]
+    ];
+    wheelPositions.forEach(pos => {
+      const w = new THREE.Mesh(wheelGeo, wheelMat);
+      w.position.set(...pos);
+      w.castShadow = true;
+      carGroup.add(w);
+      wheels.push(w);
+    });
+
+    // =========================================================================
+    // 4. SISTEMA DE PARTÍCULAS COLD-GAS (HUMO BLANCO DE ALTA PRESIÓN)
+    // =========================================================================
+    const particles = [];
+    const particleGeo = new THREE.SphereGeometry(0.24, 8, 8);
+    const particleMatTemplate = new THREE.MeshBasicMaterial({
+      color: 0xeef7ff,
+      transparent: true,
+      opacity: 0.75
+    });
+
+    function spawnColdGasPlume(localOffset, dirLocal, speedScale = 1.0) {
+      const mat = particleMatTemplate.clone();
+      const p = new THREE.Mesh(particleGeo, mat);
+
+      const worldPos = localOffset.clone().applyMatrix4(carGroup.matrixWorld);
+      p.position.copy(worldPos);
+
+      const worldDir = dirLocal.clone().transformDirection(carGroup.matrixWorld);
+      const jitter = new THREE.Vector3(
+        (Math.random() - 0.5) * 3.5,
+        (Math.random() - 0.5) * 3.5,
+        (Math.random() - 0.5) * 3.5
+      );
+
+      scene.add(p);
+      particles.push({
+        mesh: p,
+        vel: worldDir.multiplyScalar(18 * speedScale).add(jitter),
+        life: 1.0
+      });
+    }
+
+    // =========================================================================
+    // 5. MOTOR DE FÍSICAS REALES (80 kN THRUST + EFECTO SUELO + VTOL 4 ESQUINAS)
+    // =========================================================================
+    const state = {
+      pos: new THREE.Vector3(0, 0.1, 40),
+      vel: new THREE.Vector3(0, 0, 0),
+      quat: new THREE.Quaternion(),
+      angVel: new THREE.Vector3(0, 0, 0), // pitch (x), yaw (y), roll (z)
+      mass: 1650,                         // kg (chasis carbono/magnesio/titanio + 250kg aire)
+      copvAir: 100,                       // % de tanque (250 kg aire comprimido)
+      suctionMode: true,                  // true = High Downforce (Succión), false = Low Drag
+      grounded: true,
+      cameraMode: 0,                      // 0 = Persecución, 1 = Cabina Yoke
+      gForce: 1.0,
+      activeThrustKN: 0,
+      // Cronómetro 0-100 km/h
+      timingZeroToHundred: false,
+      timerStart: 0,
+      bestZeroToHundred: null
+    };
+
+    const keys = {};
+    window.addEventListener('keydown', (e) => {
+      const k = e.key.toLowerCase();
+      keys[k] = true;
+      if (e.code === 'Space') keys['space'] = true;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys['shift'] = true;
+
+      if (k === 'f') {
+        state.suctionMode = !state.suctionMode;
+        const badge = document.getElementById('aero-badge');
+        if (state.suctionMode) {
+          badge.className = 'badge badge-suction';
+          badge.textContent = 'TURBINA INFERIOR: MODO SUCCIÓN (2.2G AGARRE)';
+        } else {
+          badge.className = 'badge badge-lowdrag';
+          badge.textContent = 'TURBINA INFERIOR: MODO ALTA VELOCIDAD (LOW DRAG)';
+        }
+      }
+      if (k === 'c') {
+        state.cameraMode = (state.cameraMode + 1) % 2;
+      }
+      if (k === 'r') {
+        state.pos.set(0, 0.2, 40);
+        state.vel.set(0, 0, 0);
+        state.quat.identity();
+        state.angVel.set(0, 0, 0);
+        state.copvAir = 100;
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      const k = e.key.toLowerCase();
+      keys[k] = false;
+      if (e.code === 'Space') keys['space'] = false;
+      if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keys['shift'] = false;
+    });
+
+    // Referencias DOM del HUD
+    const elSpeed = document.getElementById('speed-kmh');
+    const elMach = document.getElementById('mach-val');
+    const elAlt = document.getElementById('alt-val');
+    const elG = document.getElementById('g-val');
+    const elThrust = document.getElementById('thrust-val');
+    const elCopvFill = document.getElementById('copv-fill');
+    const elCopvPct = document.getElementById('copv-pct');
+    const elFlightStatus = document.getElementById('flight-status');
+    const elZeroSixty = document.getElementById('zero-to-sixty');
+    const elRetro = document.getElementById('retro-indicator');
+
+    const nozFL = document.getElementById('noz-fl');
+    const nozFR = document.getElementById('noz-fr');
+    const nozRL = document.getElementById('noz-rl');
+    const nozRR = document.getElementById('noz-rr');
+    const nozRear = document.getElementById('noz-rear');
+
+    // Función para calcular la altura del suelo o rampa bajo el coche
+    function getTerrainHeightAndSlope(x, z) {
+      for (const r of ramps) {
+        const halfW = r.width / 2;
+        const halfL = r.length / 2;
+        if (x >= r.x - halfW && x <= r.x + halfW && z <= r.z + halfL && z >= r.z - halfL) {
+          // Avanza hacia -Z
+          const progress = (r.z + halfL - z) / r.length;
+          const h = progress * r.height;
+          const pitchAngle = Math.atan2(r.height, r.length);
+          return { height: h, slopePitch: pitchAngle };
+        }
+      }
+      return { height: 0, slopePitch: 0 };
+    }
+
+    let prevVel = new THREE.Vector3();
+    let clock = new THREE.Clock();
+
+    function updatePhysics(dt) {
+      dt = Math.min(dt, 0.04); // Estabilidad numérica
+      prevVel.copy(state.vel);
+      state.activeThrustKN = 0;
+
+      // Indicadores de toberas
+      let flActive = false, frActive = false, rlActive = false, rrActive = false, rearActive = false;
+
+      // Vectores de orientación del coche
+      const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(state.quat);
+      const up = new THREE.Vector3(0, 1, 0).applyQuaternion(state.quat);
+      const right = new THREE.Vector3(1, 0, 0).applyQuaternion(state.quat);
+
+      const terrain = getTerrainHeightAndSlope(state.pos.x, state.pos.z);
+      const altitude = state.pos.y - terrain.height;
+      state.grounded = altitude <= 0.12 && state.vel.y <= 3.5;
+
+      // Animación del alerón activo
+      const targetWingY = state.suctionMode ? 0.93 : 0.79;
+      const targetWingRot = state.suctionMode ? 0.28 : 0.02;
+      activeWing.position.y += (targetWingY - activeWing.position.y) * 8 * dt;
+      activeWing.rotation.x += (targetWingRot - activeWing.rotation.x) * 8 * dt;
+
+      const speedMS = state.vel.length();
+      const speedKMH = speedMS * 3.6;
+
+      // Cronómetro automático 0-100 km/h
+      if (speedKMH < 1.5 && state.grounded) {
+        state.timingZeroToHundred = false;
+      }
+      if (!state.timingZeroToHundred && speedKMH >= 1.5 && speedKMH < 15 && (keys['w'] || keys['shift'])) {
+        state.timingZeroToHundred = true;
+        state.timerStart = performance.now();
+      }
+      if (state.timingZeroToHundred && speedKMH >= 100) {
+        const elapsed = ((performance.now() - state.timerStart) / 1000).toFixed(2);
+        state.timingZeroToHundred = false;
+        if (!state.bestZeroToHundred || parseFloat(elapsed) < parseFloat(state.bestZeroToHundred)) {
+          state.bestZeroToHundred = elapsed;
+        }
+        elZeroSixty.innerHTML = `Último 0-100 km/h: <strong style="color:#3fb950">${elapsed} s</strong> (Récord: ${state.bestZeroToHundred} s)`;
+      }
+
+      // -----------------------------------------------------------------------
+      // A. PROPULSORES DE GAS FRÍO SPACEX (COHETE TRASERO + VTOL 4 ESQUINAS)
+      // -----------------------------------------------------------------------
+      const hasAir = state.copvAir > 0.5;
+
+      // 1. Cohete Trasero Cold-Gas (SHIFT) -> 0 a 100 km/h en 0.81 s (~3.3 G combinados)
+      if (keys['shift'] && hasAir) {
+        const rearThrustN = 42000; // 42 kN longitudinales + motores eléctricos Plaid
+        state.vel.addScaledVector(forward, (rearThrustN / state.mass) * dt);
+        state.copvAir = Math.max(0, state.copvAir - 14 * dt);
+        state.activeThrustKN += 42;
+        rearActive = true;
+
+        spawnColdGasPlume(new THREE.Vector3(0, 0.5, 2.5), new THREE.Vector3(0, 0, 1), 1.6);
+      }
+
+      // 2. Propulsores Verticales VTOL en las 4 esquinas (ESPACIO) -> >80 kN
+      if (keys['space'] && hasAir) {
+        const vtolThrustN = 82000; // 82 kN (>8.000 kgf, supera el peso del coche ampliamente)
+        state.vel.addScaledVector(up, (vtolThrustN / state.mass) * dt);
+        state.copvAir = Math.max(0, state.copvAir - 18 * dt);
+        state.activeThrustKN += 82;
+        state.grounded = false;
+        flActive = frActive = rlActive = rrActive = true;
+
+        // Humo blanco en las 4 esquinas
+        spawnColdGasPlume(new THREE.Vector3(-1.0, 0.2, -1.5), new THREE.Vector3(-0.15, -1, 0), 1.1);
+        spawnColdGasPlume(new THREE.Vector3( 1.0, 0.2, -1.5), new THREE.Vector3( 0.15, -1, 0), 1.1);
+        spawnColdGasPlume(new THREE.Vector3(-1.0, 0.2,  1.5), new THREE.Vector3(-0.15, -1, 0), 1.1);
+        spawnColdGasPlume(new THREE.Vector3( 1.0, 0.2,  1.5), new THREE.Vector3( 0.15, -1, 0), 1.1);
+      }
+
+      // -----------------------------------------------------------------------
+      // B. DINÁMICA EN TIERRA VS. DINÁMICA DE VUELO Y BARREL ROLLS
+      // -----------------------------------------------------------------------
+      if (state.grounded) {
+        state.pos.y = terrain.height + 0.05;
+
+        // Si estamos en una rampa, alineamos el cabeceo con la pendiente
+        if (terrain.slopePitch > 0) {
+          const euler = new THREE.Euler().setFromQuaternion(state.quat, 'YXZ');
+          euler.x = terrain.slopePitch;
+          euler.z *= 0.85;
+          state.quat.setFromEuler(euler);
+          // Al salir de la rampa a gran velocidad, convertimos velocidad horizontal en vertical
+          state.vel.y = Math.sin(terrain.slopePitch) * speedMS * 0.95;
+        } else {
+          state.vel.y = Math.max(0, state.vel.y);
+          // Auto-nivelar pitch y roll en asfalto plano
+          const euler = new THREE.Euler().setFromQuaternion(state.quat, 'YXZ');
+          euler.x *= 0.82;
+          euler.z *= 0.82;
+          state.quat.setFromEuler(euler);
+          state.angVel.set(0, 0, 0);
+        }
+
+        // Compresor eléctrico recarga el tanque de aire mientras conduces en tierra
+        if (!keys['shift'] && !keys['space'] && state.copvAir < 100) {
+          const rechargeRate = 6.5 + Math.min(speedKMH * 0.05, 8);
+          state.copvAir = Math.min(100, state.copvAir + rechargeRate * dt);
+        }
+
+        // Tracción eléctrica Tri-Motor + Efecto Suelo (Turbina de Succión)
+        const driveAccel = keys['w'] ? 13.5 : (keys['s'] ? -18.0 : 0);
+        state.vel.addScaledVector(forward, driveAccel * dt);
+
+        // Giro Steer-by-Wire con agarre >2G si el modo Succión está activo
+        const gripMultiplier = state.suctionMode ? 1.55 : 0.95;
+        const turnInput = (keys['a'] ? 1 : 0) - (keys['d'] ? 1 : 0);
+        if (speedMS > 0.5) {
+          const yawDelta = turnInput * 1.65 * gripMultiplier * dt * Math.min(1, speedMS / 12);
+          const qYaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yawDelta);
+          state.quat.premultiply(qYaw);
+
+          // Redirigir el vector velocidad hacia donde apunta el morro (agarre lateral)
+          const lateralGrip = state.suctionMode ? 12.0 : 5.5;
+          const forwardSpeed = state.vel.dot(forward);
+          const desiredVel = forward.clone().multiplyScalar(forwardSpeed);
+          desiredVel.y = state.vel.y;
+          state.vel.lerp(desiredVel, Math.min(1, lateralGrip * dt));
+        }
+
+        // Animación del volante Yoke
+        yokeGroup.rotation.z = turnInput * 0.45;
+
+        // Resistencia aerodinámica según modo de la turbina inferior
+        const dragFactor = state.suctionMode ? 0.00042 : 0.00014; // Low drag permite +600 km/h con boost
+        state.vel.multiplyScalar(1 - (0.12 * dt + dragFactor * speedMS * dt));
+
+        elRetro.textContent = 'Retro-Frenado: Standby';
+        elFlightStatus.textContent = state.copvAir < 99.5 ? 'EN TIERRA - COMPRESOR RECARGANDO AIRE' : 'EN TIERRA - TANQUE COPV AL 100%';
+        elFlightStatus.style.color = '#3fb950';
+
+      } else {
+        // ---------------------------------------------------------------------
+        // MODO VUELO ESPACIAL (CONTROL DE ACTITUD EN LAS 4 ESQUINAS)
+        // ---------------------------------------------------------------------
+        elFlightStatus.textContent = 'EN VUELO - CONTROL VECTORIAL ACTIVO';
+        elFlightStatus.style.color = '#00e5ff';
+
+        // Gravedad terrestre
+        state.vel.y -= 9.81 * dt;
+
+        // Control de Actitud mediante micro-impulsos Cold-Gas (Pitch, Yaw, Barrel Roll)
+        const pitchInput = (keys['s'] ? 1 : 0) - (keys['w'] ? 1 : 0);
+        const yawInput   = (keys['a'] ? 1 : 0) - (keys['d'] ? 1 : 0);
+        const rollInput  = (keys['q'] ? 1 : 0) - (keys['e'] ? 1 : 0); // Q/E para Barrel Roll!
+
+        state.angVel.x += pitchInput * 3.2 * dt;
+        state.angVel.y += yawInput * 2.4 * dt;
+        state.angVel.z += rollInput * 5.8 * dt; // Rotación rápida para hacer un Barrel Roll limpio
+
+        // Activar luces de telemetría de las 4 esquinas según maniobra aérea
+        if (rollInput > 0) { frActive = true; rrActive = true; spawnColdGasPlume(new THREE.Vector3(1.0, 0.3, 0), new THREE.Vector3(1, -1, 0), 0.7); }
+        if (rollInput < 0) { flActive = true; rlActive = true; spawnColdGasPlume(new THREE.Vector3(-1.0, 0.3, 0), new THREE.Vector3(-1, -1, 0), 0.7); }
+        if (pitchInput > 0) { flActive = true; frActive = true; }
+        if (pitchInput < 0) { rlActive = true; rrActive = true; }
+
+        // Amortiguación giroscópica de los actuadores eléctricos
+        state.angVel.multiplyScalar(Math.pow(0.22, dt));
+
+        // Si el jugador no toca Q/E ni W/S cerca del suelo, el coche auto-estabiliza el horizonte
+        if (rollInput === 0 && pitchInput === 0 && altitude < 25) {
+          const euler = new THREE.Euler().setFromQuaternion(state.quat, 'YXZ');
+          euler.x *= (1 - 3.5 * dt);
+          euler.z *= (1 - 3.5 * dt);
+          state.quat.setFromEuler(euler);
+        }
+
+        // Aplicar rotación local en vuelo
+        const dq = new THREE.Quaternion().setFromEuler(
+          new THREE.Euler(state.angVel.x * dt, state.angVel.y * dt, state.angVel.z * dt, 'YXZ')
+        );
+        state.quat.multiply(dq);
+        state.quat.normalize();
+
+        // SISTEMA DE RETRO-FRENADO AUTOMÁTICO (3.3 G Demo Landing)
+        // Si cae rápido a menos de 14 metros del suelo y queda aire, dispara las 4 esquinas
+        if (state.vel.y < -8.0 && altitude < 14.0 && hasAir) {
+          const retroAccel = 26.0; // ~2.6G + 1G gravedad = ~3.3G de frenado en caída
+          state.vel.y += retroAccel * dt;
+          state.copvAir = Math.max(0, state.copvAir - 10 * dt);
+          state.activeThrustKN += 65;
+          flActive = frActive = rlActive = rrActive = true;
+          elRetro.textContent = '¡RETRO-FRENADO 3.3G ACTIVO!';
+          spawnColdGasPlume(new THREE.Vector3(-1.0, 0.1, -1.5), new THREE.Vector3(0, -1, 0), 1.3);
+          spawnColdGasPlume(new THREE.Vector3( 1.0, 0.1, -1.5), new THREE.Vector3(0, -1, 0), 1.3);
+        } else {
+          elRetro.textContent = 'Retro-Frenado: Armado';
+        }
+      }
+
+      // Actualizar posición
+      state.pos.addScaledVector(state.vel, dt);
+      if (state.pos.y < terrain.height + 0.05) {
+        state.pos.y = terrain.height + 0.05;
+        if (state.vel.y < 0) state.vel.y = 0;
+      }
+
+      // Copiar transformaciones al modelo 3D
+      carGroup.position.copy(state.pos);
+      carGroup.quaternion.copy(state.quat);
+
+      // Rotación visual de las ruedas
+      wheels.forEach(w => { w.rotation.x -= speedMS * dt * 2.2; });
+
+      // Cálculo de Fuerza G real
+      const accelVec = state.vel.clone().sub(prevVel).divideScalar(dt);
+      accelVec.y += 9.81; // Incluir 1G gravitatorio
+      const instantG = accelVec.length() / 9.81;
+      state.gForce += (instantG - state.gForce) * 10 * dt;
+
+      // Actualizar HUD
+      elSpeed.textContent = Math.round(speedKMH);
+      elMach.textContent = `MACH ${(speedKMH / 1234.8).toFixed(2)}`;
+      elAlt.textContent = `${Math.max(0, altitude).toFixed(1)} m`;
+      elG.textContent = `${state.gForce.toFixed(1)} G`;
+      elThrust.textContent = `${state.activeThrustKN} kN`;
+
+      const pct = Math.round(state.copvAir);
+      const psi = Math.round(state.copvAir * 100);
+      elCopvPct.textContent = `${pct}% (${psi} PSI)`;
+      elCopvFill.style.width = `${state.copvAir}%`;
+
+      nozFL.classList.toggle('active', flActive);
+      nozFR.classList.toggle('active', frActive);
+      nozRL.classList.toggle('active', rlActive);
+      nozRR.classList.toggle('active', rrActive);
+      nozRear.classList.toggle('active', rearActive);
+    }
+
+    // =========================================================================
+    // 6. CÁMARA Y BUCLE PRINCIPAL DE RENDERIZADO
+    // =========================================================================
+    function updateCamera(dt) {
+      if (state.cameraMode === 0) {
+        // Cámara de persecución dinámica con efecto de aceleración G
+        const desiredOffset = new THREE.Vector3(0, 2.5, 6.8);
+        desiredOffset.applyQuaternion(state.quat);
+        const targetCamPos = state.pos.clone().add(desiredOffset);
+        camera.position.lerp(targetCamPos, Math.min(1, 12 * dt));
+
+        const lookTarget = state.pos.clone().add(
+          new THREE.Vector3(0, 0.9, -6).applyQuaternion(state.quat)
+        );
+        camera.lookAt(lookTarget);
+      } else {
+        // Cámara interior de cabina (frente al volante Yoke)
+        const cockpitPos = new THREE.Vector3(-0.38, 1.04, -0.15).applyMatrix4(carGroup.matrixWorld);
+        camera.position.copy(cockpitPos);
+        const lookForward = new THREE.Vector3(-0.38, 0.98, -20).applyMatrix4(carGroup.matrixWorld);
+        camera.lookAt(lookForward);
+      }
+    }
+
+    function updateParticles(dt) {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.life -= dt * 2.2;
+        if (p.life <= 0) {
+          scene.remove(p.mesh);
+          p.mesh.material.dispose();
+          particles.splice(i, 1);
+        } else {
+          p.mesh.position.addScaledVector(p.vel, dt);
+          p.mesh.scale.addScalar(dt * 3.8);
+          p.mesh.material.opacity = p.life * 0.7;
+        }
+      }
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = clock.getDelta();
+      updatePhysics(dt);
+      updateParticles(dt);
+      updateCamera(dt);
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    animate();
+  </script>
 </body>
 </html>
